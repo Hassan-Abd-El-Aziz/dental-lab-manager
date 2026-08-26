@@ -1,0 +1,161 @@
+@media print {
+  body {
+    background: white;
+    font-size: 12px;
+    line-height: 1.5;
+    overflow: visible;
+    height: auto;
+  }
+
+  #app {
+    display: block;
+    height: auto;
+  }
+
+  .sidebar,
+  .sidebar-nav,
+  .toast-container,
+  .modal-overlay,
+  .btn,
+  .btn-group,
+  .form-actions,
+  .filter-bar,
+  .no-print,
+  .chart-card,
+  .kpi-grid {
+    display: none !important;
+  }
+
+  .main-content {
+    padding: 0;
+    overflow: visible;
+  }
+
+  .page-container {
+    padding: 0;
+  }
+
+  .print-document {
+    max-width: 210mm;
+    margin: 0 auto;
+    padding: 20mm;
+  }
+
+  .print-header {
+    text-align: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #1e293b;
+  }
+
+  .print-header .lab-name {
+    font-size: 22px;
+    font-weight: 800;
+    color: #1e293b;
+    margin-bottom: 4px;
+  }
+
+  .print-header .lab-address {
+    font-size: 12px;
+    color: #64748b;
+  }
+
+  .print-header .doc-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-top: 12px;
+    color: #1e293b;
+  }
+
+  .print-info {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+    font-size: 13px;
+  }
+
+  .print-info-item {
+    display: flex;
+    gap: 8px;
+  }
+
+  .print-info-label {
+    font-weight: 600;
+    color: #475569;
+  }
+
+  .print-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+  }
+
+  .print-table th {
+    padding: 8px 12px;
+    text-align: right;
+    font-size: 12px;
+    font-weight: 700;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+  }
+
+  .print-table td {
+    padding: 8px 12px;
+    font-size: 12px;
+    border: 1px solid #e2e8f0;
+  }
+
+  .print-table tfoot td {
+    font-weight: 700;
+    background: #f8fafc;
+  }
+
+  .print-summary {
+    display: flex;
+    gap: 32px;
+    justify-content: flex-end;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 2px solid #e2e8f0;
+  }
+
+  .print-summary-item {
+    text-align: right;
+  }
+
+  .print-summary-label {
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 2px;
+  }
+
+  .print-summary-value {
+    font-size: 16px;
+    font-weight: 800;
+    color: #1e293b;
+  }
+
+  .print-footer {
+    margin-top: 30px;
+    padding-top: 15px;
+    border-top: 1px solid #e2e8f0;
+    text-align: center;
+    font-size: 11px;
+    color: #94a3b8;
+  }
+
+  .print-teeth-info {
+    margin-bottom: 12px;
+    font-size: 13px;
+  }
+
+  .print-diagnosis {
+    margin-bottom: 12px;
+    padding: 8px 12px;
+    background: #f8fafc;
+    border-radius: 6px;
+    font-size: 13px;
+  }
+}

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:;">
+  <title>نظام إدارة معمل الأسنان</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./css/main.css">
+  <link rel="stylesheet" href="./css/dashboard.css">
+  <link rel="stylesheet" href="./css/forms.css">
+  <link rel="stylesheet" href="./css/tables.css">
+  <link rel="stylesheet" href="./css/print.css">
+</head>
+<body>
+  <div id="app">
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-header">
+        <div class="lab-name-row">
+          <span class="logo-icon">🦷</span>
+          <span class="lab-name" id="labNameSidebar">معمل الأسنان</span>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-item active" data-page="dashboard">
+          <span class="nav-icon">🏠</span>
+          <span class="nav-text">لوحة التحكم</span>
+        </a>
+        <a href="#" class="nav-item" data-page="dentists">
+          <span class="nav-icon">👨‍⚕️</span>
+          <span class="nav-text">الأطباء</span>
+        </a>
+        <a href="#" class="nav-item" data-page="new-order">
+          <span class="nav-icon">🦷</span>
+          <span class="nav-text">طلب جديد</span>
+        </a>
+        <a href="#" class="nav-item" data-page="invoices">
+          <span class="nav-icon">🧾</span>
+          <span class="nav-text">الفواتير</span>
+        </a>
+        <a href="#" class="nav-item" data-page="payments">
+          <span class="nav-icon">💰</span>
+          <span class="nav-text">المدفوعات</span>
+        </a>
+        <a href="#" class="nav-item" data-page="expenses">
+          <span class="nav-icon">💸</span>
+          <span class="nav-text">المصروفات</span>
+        </a>
+        <a href="#" class="nav-item" data-page="reports">
+          <span class="nav-icon">📊</span>
+          <span class="nav-text">التقارير</span>
+        </a>
+        <a href="#" class="nav-item" data-page="settings">
+          <span class="nav-icon">⚙️</span>
+          <span class="nav-text">الإعدادات</span>
+        </a>
+      </nav>
+      <div class="window-controls" id="windowControls">
+        <button class="window-control-btn" id="downloadBtn" title="تنزيل نسخة احتياطية">⬇️</button>
+        <button class="window-control-btn lock-btn" id="lockScreenBtn" title="قفل الشاشة">🔒</button>
+      </div>
+    </aside>
+    <main id="main-content" class="main-content">
+      <div id="page-container" class="page-container"></div>
+    </main>
+  </div>
+
+  <div id="modal-container"></div>
+  <div id="toast-container" class="toast-container"></div>
+
+  <div id="lockScreen" class="lock-screen">
+    <div class="lock-screen-content">
+      <div class="lock-screen-icon">🔒</div>
+      <div class="lock-screen-title">الشاشة مقفولة</div>
+      <button class="btn btn-primary" id="unlockBtn" style="margin-top:16px">إلغاء القفل</button>
+    </div>
+  </div></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>

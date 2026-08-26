@@ -1,0 +1,20 @@
+appId: com.dental-lab.manager
+productName: Dental Lab Manager
+directories:
+  buildResources: resources
+files:
+  - out/**/*
+win:
+  target:
+    - nsis
+  icon: resources/icon.ico
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Dental Lab Manager
+npmRebuild: true
+extraResources:
+  - from: resources/
+    to: resources/

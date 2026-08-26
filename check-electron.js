@@ -1,0 +1,1 @@
+console.log('electron version:', process.versions.electron); console.log('node version:', process.versions.node); console.log('chrome version:', process.versions.chrome); console.log('all keys:', Object.keys(process.versions).join(', '));
