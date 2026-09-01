@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:;">
-  <title>نظام إدارة معمل الأسنان</title>
+  <title>🦷 نظام إدارة معمل الأسنان</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -14,9 +14,15 @@
   <link rel="stylesheet" href="./css/tables.css">
   <link rel="stylesheet" href="./css/print.css">
 </head>
-<body>
-  <div id="app">
-    <aside id="sidebar" class="sidebar">
+  <body>
+    <div id="app">
+      <nav class="top-navbar" id="topNavbar">
+        <div class="nav-user">
+          <span class="nav-user-label">مرحباً:</span>
+          <span class="nav-user-name" id="navUserName">---</span>
+        </div>
+      </nav>
+      <aside id="sidebar" class="sidebar">
       <div class="sidebar-header">
         <div class="lab-name-row">
           <span class="logo-icon">🦷</span>
@@ -40,6 +46,14 @@
           <span class="nav-icon">🧾</span>
           <span class="nav-text">الفواتير</span>
         </a>
+        <a href="#" class="nav-item" data-page="order-tracking">
+          <span class="nav-icon">🚚</span>
+          <span class="nav-text">متابعة الطلبات</span>
+        </a>
+        <a href="#" class="nav-item" data-page="inventory">
+          <span class="nav-icon">📦</span>
+          <span class="nav-text">المخزن</span>
+        </a>
         <a href="#" class="nav-item" data-page="payments">
           <span class="nav-icon">💰</span>
           <span class="nav-text">المدفوعات</span>
@@ -48,13 +62,25 @@
           <span class="nav-icon">💸</span>
           <span class="nav-text">المصروفات</span>
         </a>
-        <a href="#" class="nav-item" data-page="reports">
+        <a href="#" class="nav-item" data-page="reports" data-admin="true">
           <span class="nav-icon">📊</span>
           <span class="nav-text">التقارير</span>
         </a>
-        <a href="#" class="nav-item" data-page="settings">
+        <a href="#" class="nav-item" data-page="users" data-admin="true">
+          <span class="nav-icon">👤</span>
+          <span class="nav-text">المستخدمين</span>
+        </a>
+        <a href="#" class="nav-item" data-page="audit" data-admin="true">
+          <span class="nav-icon">📋</span>
+          <span class="nav-text">سجل التدقيق</span>
+        </a>
+        <a href="#" class="nav-item" data-page="settings" data-admin="true">
           <span class="nav-icon">⚙️</span>
           <span class="nav-text">الإعدادات</span>
+        </a>
+        <a href="#" class="nav-item" id="logoutBtn" style="display:none">
+          <span class="nav-icon">🚪</span>
+          <span class="nav-text">تسجيل الخروج</span>
         </a>
       </nav>
       <div class="window-controls" id="windowControls">

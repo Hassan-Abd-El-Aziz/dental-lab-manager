@@ -173,6 +173,7 @@ body {
   overflow-y: auto;
   overflow-x: hidden;
   padding: 0;
+  margin-top: 40px;
 }
 
 .page-container {
@@ -347,6 +348,9 @@ body {
   font-size: 12px;
   font-weight: 600;
 }
+
+.status-info { background: var(--info-bg); color: var(--info); }
+.status-warning { background: var(--warning-bg); color: var(--warning); }
 
 .status-paid {
   background: var(--success-bg);
@@ -630,4 +634,102 @@ body {
 @keyframes pulse {
   0%, 100% { transform: scale(1); opacity: 1; }
   50% { transform: scale(1.05); opacity: 0.8; }
+}
+
+#app.login-mode #sidebar {
+  display: none;
+}
+
+#app.login-mode #main-content {
+  flex: 1;
+  margin: 0;
+  padding: 0;
+}
+
+.login-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+}
+
+.login-card {
+  background: var(--card-bg);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  padding: 40px;
+  width: 90%;
+  max-width: 420px;
+  text-align: center;
+}
+
+.login-logo {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.login-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--primary-dark);
+  margin-bottom: 4px;
+}
+
+.login-subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+
+.login-footer {
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+}
+
+.form-error {
+  color: var(--danger);
+  font-size: 13px;
+  text-align: right;
+}
+
+.w-full {
+  width: 100%;
+}
+
+#app.login-mode .top-navbar {
+  display: none;
+}
+
+.top-navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 24px;
+  z-index: 999;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.nav-user {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #fff;
+}
+
+.nav-user-label {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.nav-user-name {
+  font-weight: 700;
+  font-size: 14px;
+  color: #e0f2fe;
 }

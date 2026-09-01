@@ -1,6 +1,8 @@
 import { getRealm } from '../realm.js'
 import Realm from 'realm'
 import { generateId } from './dentistService.js'
+import { logAudit } from './auditService.js'
+import { getCurrentUser } from './authService.js'
 
 function generateOrderNumber() {
   const realm = getRealm()
@@ -40,6 +42,9 @@ export function createOrder(data) {
 
   const paid = data.paid || 0
   const remaining = data.total - paid
+  const totalDiscount = data.items?.reduce((sum, i) => sum + (i.discount || 0), 0) || 0
+  const dentist = realm.objectForPrimaryKey('Dentist', data.dentistId)
+  const dentistName = dentist ? dentist.name : data.dentistId
 
   realm.write(() => {
     realm.create('Order', {
@@ -51,12 +56,17 @@ export function createOrder(data) {
       categoryNameSnapshot: data.categoryName || '', categoryComment: data.categoryComment || '',
       total: data.total, paid, remaining,
       status: remaining <= 0 ? 'COMPLETED' : 'PENDING',
+      deliveryStatus: 'IN_LAB',
+      deliveryPerson: '',
+      deliveryDate: null,
+      totalDiscount,
+      notes: data.notes || '',
       createdAt: new Date(), updatedAt: new Date()
     })
 
     if (data.items?.length) {
       data.items.forEach((item) => {
-        realm.create('OrderItem', { id: generateId(), orderId, itemId: item.itemId, itemNameSnapshot: item.itemName, unitPriceSnapshot: item.unitPrice, quantity: item.quantity, lineTotal: item.lineTotal })
+        realm.create('OrderItem', { id: generateId(), orderId, itemId: item.itemId, itemNameSnapshot: item.itemName, unitPriceSnapshot: item.unitPrice, quantity: item.quantity, lineTotal: item.lineTotal, discount: item.discount || 0 })
       })
     }
 
@@ -66,6 +76,7 @@ export function createOrder(data) {
       status: remaining <= 0 ? 'PAID' : paid > 0 ? 'PARTIAL' : 'UNPAID',
       diagnosis: data.diagnosis || '', teeth: buildTeethString(data),
       category: data.categoryName || '', categoryComment: data.categoryComment || '',
+      totalDiscount,
       createdAt: new Date(), updatedAt: new Date()
     })
 
@@ -78,6 +89,7 @@ export function createOrder(data) {
       realm.create('LedgerEntry', { id: generateId(), dentistId: data.dentistId, orderId, invoiceId, paymentId, date: new Date(data.orderDate), type: 'PAYMENT', description: `دفعة ${paymentNum}`, debit: 0, credit: paid, createdAt: new Date() })
     }
   })
+  logAudit(getCurrentUser()?.username || 'system', 'ORDER_CREATE', 'Order', orderId, `إنشاء طلب ${orderNumber} للطبيب ${dentistName}`)
 
   return { orderId, invoiceId, orderNumber, invoiceNumber }
 }
@@ -96,9 +108,12 @@ export function getAllOrders(filters = {}) {
     const orderItems = realm.objects('OrderItem').filtered('orderId == $0', o.id)
     return {
       id: o.id, orderNumber: o.orderNumber, invoiceId: o.invoiceId, dentistId: o.dentistId,
-      dentistName: dentist ? dentist.name : '', orderDate: o.orderDate, condition: o.condition,
+      dentistName: dentist ? dentist.name : '', dentistPhone: dentist ? (dentist.phone || '') : '',
+      orderDate: o.orderDate, condition: o.condition,
       diagnosis: o.diagnosis, total: o.total, paid: o.paid, remaining: o.remaining, status: o.status,
-      items: orderItems.map((i) => ({ id: i.id, itemNameSnapshot: i.itemNameSnapshot, unitPriceSnapshot: i.unitPriceSnapshot, quantity: i.quantity, lineTotal: i.lineTotal }))
+      deliveryStatus: o.deliveryStatus || 'IN_LAB', deliveryPerson: o.deliveryPerson || '', deliveryDate: o.deliveryDate || null,
+      totalDiscount: o.totalDiscount || 0,
+      items: orderItems.map((i) => ({ id: i.id, itemNameSnapshot: i.itemNameSnapshot, unitPriceSnapshot: i.unitPriceSnapshot, quantity: i.quantity, lineTotal: i.lineTotal, discount: i.discount || 0 }))
     }
   })
 }
@@ -111,8 +126,60 @@ export function getOrderById(id) {
   const orderItems = realm.objects('OrderItem').filtered('orderId == $0', o.id)
   return {
     id: o.id, orderNumber: o.orderNumber, invoiceId: o.invoiceId, dentistId: o.dentistId,
-    dentistName: dentist ? dentist.name : '', orderDate: o.orderDate, condition: o.condition,
+    dentistName: dentist ? dentist.name : '', dentistPhone: dentist ? (dentist.phone || '') : '',
+    orderDate: o.orderDate, condition: o.condition,
     total: o.total, paid: o.paid, remaining: o.remaining, status: o.status,
-    items: orderItems.map((i) => ({ id: i.id, itemNameSnapshot: i.itemNameSnapshot, unitPriceSnapshot: i.unitPriceSnapshot, quantity: i.quantity, lineTotal: i.lineTotal }))
+    deliveryStatus: o.deliveryStatus || 'IN_LAB', deliveryPerson: o.deliveryPerson || '', deliveryDate: o.deliveryDate || null,
+    totalDiscount: o.totalDiscount || 0,
+    items: orderItems.map((i) => ({ id: i.id, itemNameSnapshot: i.itemNameSnapshot, unitPriceSnapshot: i.unitPriceSnapshot, quantity: i.quantity, lineTotal: i.lineTotal, discount: i.discount || 0 }))
   }
+}
+
+export function updateDeliveryStatus(id, deliveryStatus, deliveryPerson, deliveryDate) {
+  const realm = getRealm()
+  realm.write(() => {
+    const order = realm.objectForPrimaryKey('Order', id)
+    if (order) {
+      order.deliveryStatus = deliveryStatus || order.deliveryStatus
+      order.deliveryPerson = deliveryPerson || ''
+      order.deliveryDate = deliveryDate || null
+      order.updatedAt = new Date()
+    }
+  })
+  return getOrderById(id)
+}
+
+export function searchOrders(query, filters = {}) {
+  const realm = getRealm()
+  let orders
+  if (query && query.trim()) {
+    const q = query.trim()
+    orders = realm.objects('Order').filtered('orderNumber CONTAINS[c] $0 OR dentistId == $0', q)
+  } else {
+    orders = realm.objects('Order')
+  }
+  if (filters.deliveryStatus) {
+    orders = orders.filtered('deliveryStatus == $0', filters.deliveryStatus)
+  }
+  orders = orders.sorted('createdAt', true)
+  return orders.map((o) => {
+    const dentist = realm.objectForPrimaryKey('Dentist', o.dentistId)
+    return {
+      id: o.id, orderNumber: o.orderNumber, dentistId: o.dentistId,
+      dentistName: dentist ? dentist.name : '', orderDate: o.orderDate,
+      total: o.total, status: o.status,
+      deliveryStatus: o.deliveryStatus || 'IN_LAB', deliveryPerson: o.deliveryPerson || '', deliveryDate: o.deliveryDate || null,
+      totalDiscount: o.totalDiscount || 0
+    }
+  })
+}
+
+export function deleteOrder(id) {
+  const realm = getRealm()
+  const order = realm.objectForPrimaryKey('Order', id)
+  if (!order) throw new Error('الطلب غير موجود')
+  const orderNumber = order.orderNumber
+  realm.write(() => { realm.delete(order) })
+  logAudit(getCurrentUser()?.username || 'system', 'DELETE', 'Order', id, `حذف الطلب "${orderNumber}"`)
+  return true
 }

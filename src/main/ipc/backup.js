@@ -21,6 +21,25 @@ export function registerBackupHandlers() {
     }
   })
 
+  ipcMain.handle('reset:financialWithBackup', async () => {
+    try {
+      const result = await dialog.showSaveDialog({
+        title: 'حفظ نسخة احتياطية قبل التصفير',
+        defaultPath: `DentalLab_Backup_BeforeReset_${new Date().toISOString().split('T')[0]}.realmbackup`,
+        filters: [{ name: 'نسخة احتياطية', extensions: ['realmbackup'] }]
+      })
+      if (result.canceled) return { canceled: true }
+      const realm = getRealm()
+      fs.copyFileSync(realm.path, result.filePath)
+      const { resetFinancialData } = await import('../database/services/resetService.js')
+      resetFinancialData()
+      return { success: true, path: result.filePath }
+    } catch (error) {
+      console.error('Reset with backup error:', error)
+      throw new Error('حدث خطأ أثناء العملية')
+    }
+  })
+
   ipcMain.handle('backup:restore', async () => {
     try {
       const result = await dialog.showOpenDialog({
@@ -46,12 +65,19 @@ export function registerBackupHandlers() {
       const lockPath = realmPath + '.lock'
       if (fs.existsSync(lockPath)) fs.unlinkSync(lockPath)
 
-      app.relaunch()
-      app.exit(0)
-      return { success: true }
+      return { success: true, needsRestart: true }
     } catch (error) {
       console.error('Restore error:', error)
       throw new Error('حدث خطأ أثناء استعادة النسخة الاحتياطية')
     }
+  })
+
+  ipcMain.handle('app:restart', async () => {
+    const realm = getRealm()
+    if (realm && !realm.isClosed) {
+      realm.close()
+    }
+    app.relaunch()
+    app.exit(0)
   })
 }

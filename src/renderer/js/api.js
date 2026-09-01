@@ -9,5 +9,11 @@ export const API = {
   settings: window.electronAPI.settings,
   dashboard: window.electronAPI.dashboard,
   reports: window.electronAPI.reports,
-  backup: window.electronAPI.backup
+  auth: window.electronAPI.auth,
+  users: window.electronAPI.users,
+  audit: window.electronAPI.audit,
+  inventory: window.electronAPI.inventory,
+  backup: window.electronAPI.backup,
+  reset: window.electronAPI.reset,
+  app: window.electronAPI.app
 }

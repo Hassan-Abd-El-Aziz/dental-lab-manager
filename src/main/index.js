@@ -4,6 +4,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { initializeDatabase, getRealm } from './database/realm.js'
 import { registerIpcHandlers } from './ipc/handlers.js'
 import { registerBackupHandlers } from './ipc/backup.js'
+import { seedAdminUser, initSession } from './database/services/authService.js'
 import fs from 'fs'
 
 function createWindow() {
@@ -20,6 +21,7 @@ function createWindow() {
       symbolColor: '#ffffff',
       height: 40
     },
+    icon: join(__dirname, '../../resources/icon.ico'),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
@@ -64,6 +66,8 @@ app.whenReady().then(() => {
   })
 
   initializeDatabase()
+  seedAdminUser()
+  initSession()
   registerIpcHandlers()
   registerBackupHandlers()
 

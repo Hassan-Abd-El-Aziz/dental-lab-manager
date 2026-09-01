@@ -3,23 +3,23 @@ import { generateId } from './dentistService.js'
 
 export function getAllItems() {
   const realm = getRealm()
-  const items = realm.objects('Item').sorted('name', true)
+  const items = realm.objects('Item').filtered('inventory == false').sorted('name', true)
   return items.map((item) => {
     const category = realm.objectForPrimaryKey('Category', item.categoryId)
-    return { id: item.id, name: item.name, categoryId: item.categoryId, categoryName: category ? category.name : '', price: item.price, active: item.active }
+    return { id: item.id, name: item.name, categoryId: item.categoryId, categoryName: category ? category.name : '', price: item.price, quantity: item.quantity || 0, box: item.box || '', active: item.active }
   })
 }
 
 export function getItemsByCategory(categoryId) {
   const realm = getRealm()
-  const items = realm.objects('Item').filtered('categoryId == $0 AND active == true', categoryId).sorted('name', true)
+  const items = realm.objects('Item').filtered('categoryId == $0 AND active == true AND inventory == false', categoryId).sorted('name', true)
   return items.map((item) => ({ id: item.id, name: item.name, categoryId: item.categoryId, price: item.price }))
 }
 
 export function createItem(data) {
   const realm = getRealm()
   const id = generateId()
-  realm.write(() => { realm.create('Item', { id, name: data.name, categoryId: data.categoryId, price: data.price, active: true, createdAt: new Date(), updatedAt: new Date() }) })
+  realm.write(() => { realm.create('Item', { id, name: data.name, categoryId: data.categoryId || '', price: data.price || 0, quantity: data.quantity || 0, inventory: data.inventory || false, active: true, createdAt: new Date(), updatedAt: new Date() }) })
   return { id }
 }
 
@@ -37,4 +37,12 @@ export function deactivateItem(id) {
   if (!item) throw new Error('Item not found')
   realm.write(() => { item.active = !item.active; item.updatedAt = new Date() })
   return { id, active: item.active }
+}
+
+export function deleteItem(id) {
+  const realm = getRealm()
+  const item = realm.objectForPrimaryKey('Item', id)
+  if (!item) throw new Error('Item not found')
+  realm.write(() => { realm.delete(item) })
+  return { id }
 }

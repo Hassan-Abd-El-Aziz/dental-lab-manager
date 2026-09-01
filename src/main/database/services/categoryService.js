@@ -35,3 +35,11 @@ export function deactivateCategory(id) {
   realm.write(() => { category.active = !category.active })
   return { id, active: category.active }
 }
+
+export function deleteCategory(id) {
+  const realm = getRealm()
+  const category = realm.objectForPrimaryKey('Category', id)
+  if (!category) throw new Error('Category not found')
+  realm.write(() => { realm.delete(category) })
+  return { id }
+}

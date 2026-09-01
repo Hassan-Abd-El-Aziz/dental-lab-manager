@@ -23,7 +23,26 @@ export function initializeDatabase() {
     realm = new Realm({
       path: realmPath,
       schema: schemas,
-      schemaVersion: 1
+      schemaVersion: 7,
+      migration: (oldRealm, newRealm) => {
+        if (oldRealm.schemaVersion < 6) {
+          const oldItems = oldRealm.objects('Item')
+          for (let i = 0; i < oldItems.length; i++) {
+            const newItem = newRealm.create('Item', {
+              id: oldItems[i].id,
+              name: oldItems[i].name,
+              categoryId: oldItems[i].categoryId,
+              price: oldItems[i].price,
+              quantity: oldItems[i].quantity,
+              box: oldItems[i].box || '',
+              active: oldItems[i].active,
+              inventory: false,
+              createdAt: oldItems[i].createdAt,
+              updatedAt: oldItems[i].updatedAt
+            })
+          }
+        }
+      }
     })
 
     initializeDefaultData()
@@ -54,6 +73,7 @@ function initializeDefaultData() {
       })
     })
   }
+
 
   const categories = realm.objects('Category')
   if (categories.length === 0) {

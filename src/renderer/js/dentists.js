@@ -4,6 +4,7 @@ import { Modal } from './components/modal.js'
 import { Toast } from './components/toast.js'
 import { formatCurrency, formatCurrencyWithEGP, formatDate, todayString, escapeHtml, debounce } from './utilities.js'
 import { Printing } from './printing.js'
+import { Auth } from './auth.js'
 
 const DentistsPage = {
   async render(container) {
@@ -51,6 +52,7 @@ const DentistsPage = {
           <button class="btn btn-sm btn-primary" data-action="account" data-id="${d.id}">عرض الحساب</button>
           <button class="btn btn-sm btn-outline" data-action="edit" data-id="${d.id}">تعديل</button>
           <button class="btn btn-sm ${d.active ? 'btn-warning' : 'btn-success'}" data-action="toggle" data-id="${d.id}">${d.active ? 'تعطيل' : 'تفعيل'}</button>
+          ${Auth.isAdmin() ? `<button class="btn btn-sm btn-danger" data-action="delete" data-id="${d.id}">🗑️</button>` : ''}
         </div></td>
       </tr>`
     })
@@ -64,6 +66,7 @@ const DentistsPage = {
         if (action === 'account') this.showAccount(id)
         else if (action === 'edit') this.showEditModal(id)
         else if (action === 'toggle') this.toggleActive(id)
+        else if (action === 'delete') this.deleteDentist(id)
       })
     })
   },
@@ -140,6 +143,20 @@ const DentistsPage = {
     })
   },
 
+  async deleteDentist(id) {
+    const dentist = await API.dentists.getById(id)
+    if (!dentist) return
+    Modal.confirm(`هل أنت متأكد من حذف الطبيب "${dentist.name}"؟\n\nسيتم حذف الطبيب نهائياً مع جميع البيانات المرتبطة به.`, async () => {
+      try {
+        await API.dentists.delete(id)
+        Toast.success('تم حذف الطبيب بنجاح')
+        await this.loadData()
+      } catch (error) {
+        Toast.error(error.message || 'حدث خطأ في حذف الطبيب')
+      }
+    }, { title: 'تأكيد الحذف', confirmText: 'نعم، حذف', confirmClass: 'btn-danger' })
+  },
+
   async showAccount(id) {
     const account = await API.dentists.getAccount(id)
     if (!account) return
@@ -178,7 +195,10 @@ const DentistsPage = {
       <div id="accountLedger"></div>
     `
     document.getElementById('btnPrintStatement').addEventListener('click', () => Printing.printDentistStatement(id))
-    document.getElementById('btnBackToDentists').addEventListener('click', () => Router.navigate('dentists'))
+    document.getElementById('btnBackToDentists').addEventListener('click', () => {
+      Router.currentPage = null
+      Router.navigate('dentists')
+    })
     document.getElementById('btnAccToday').addEventListener('click', () => this.filterAccount(id, 'today'))
     document.getElementById('btnAccMonth').addEventListener('click', () => this.filterAccount(id, 'month'))
     document.getElementById('btnAccAll').addEventListener('click', () => this.filterAccount(id, 'all'))

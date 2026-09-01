@@ -29,10 +29,29 @@ export const Router = {
     document.getElementById('main-content').scrollTop = 0
   },
 
-  init() {
+  navigateGuarded(page, guardFn) {
+    if (guardFn) {
+      const result = guardFn(page)
+      if (!result.allowed) {
+        if (result.redirect) this.navigate(result.redirect)
+        return false
+      }
+    }
+    this.navigate(page)
+    return true
+  },
+
+   init(guardFn) {
     document.querySelectorAll('.nav-item').forEach((item) => {
       item.addEventListener('click', (e) => {
         e.preventDefault()
+        if (guardFn) {
+          const result = guardFn(item.dataset.page)
+          if (!result.allowed) {
+            if (result.redirect) this.navigate(result.redirect)
+            return
+          }
+        }
         this.navigate(item.dataset.page)
       })
     })

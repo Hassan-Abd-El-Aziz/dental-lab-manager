@@ -3,6 +3,7 @@ import { API } from './api.js'
 import { Modal } from './components/modal.js'
 import { Toast } from './components/toast.js'
 import { formatCurrency, escapeHtml } from './utilities.js'
+import { Auth } from './auth.js'
 
 const SettingsPage = {
   async render(container) {
@@ -28,14 +29,6 @@ const SettingsPage = {
         </form>
       </div>
       <div class="card mb-3">
-        <div class="card-title">التصنيفات</div>
-        <div id="categoriesList"></div>
-        <div class="form-row mt-2">
-          <div class="form-group mb-0"><input type="text" class="form-input" id="newCategoryName" placeholder="إضافة تصنيف جديد"></div>
-          <div class="form-group mb-0"><button class="btn btn-primary" id="btnAddCategory">+ إضافة</button></div>
-        </div>
-      </div>
-      <div class="card mb-3">
         <div class="card-title">الأصناف</div>
         <div id="itemsList"></div>
         <button class="btn btn-primary mt-2" id="btnAddItem">+ إضافة صنف</button>
@@ -46,27 +39,19 @@ const SettingsPage = {
           <button class="btn btn-primary" id="btnBackup">إنشاء نسخة احتياطية</button>
           <button class="btn btn-warning" id="btnRestore">استعادة نسخة احتياطية</button>
         </div>
+        ${Auth.isAdmin() ? `<div class="card-title" style="margin-top:20px;color:var(--danger)">منطقة خطرة</div>
+        <button class="btn btn-danger" id="btnResetFinancial">🗑️ تصفير جميع التعاملات المالية</button>` : ''}
       </div>
     `
     document.getElementById('settingsForm').addEventListener('submit', (e) => this.saveSettings(e))
-    document.getElementById('btnAddCategory').addEventListener('click', () => this.addCategory())
     document.getElementById('btnAddItem').addEventListener('click', () => this.showAddItemModal())
     document.getElementById('btnBackup').addEventListener('click', () => this.createBackup())
     document.getElementById('btnRestore').addEventListener('click', () => this.restoreBackup())
-    this.renderCategories(categories)
+    const resetBtn = document.getElementById('btnResetFinancial')
+    if (resetBtn) {
+      resetBtn.addEventListener('click', () => this.showResetFinancialModal())
+    }
     this.renderItems(items)
-  },
-
-  renderCategories(categories) {
-    const el = document.getElementById('categoriesList')
-    if (!el) return
-    let html = '<div class="data-table-wrapper"><table class="data-table"><thead><tr><th>الاسم</th><th>الحالة</th><th>الإجراءات</th></tr></thead><tbody>'
-    categories.forEach((cat) => {
-      html += `<tr><td class="name-cell">${escapeHtml(cat.name)}</td><td><span class="status-badge ${cat.active ? 'status-paid' : 'status-cancelled'}">${cat.active ? 'نشط' : 'معطل'}</span></td><td><button class="btn btn-sm ${cat.active ? 'btn-warning' : 'btn-success'}" data-action="toggleCat" data-id="${cat.id}">${cat.active ? 'تعطيل' : 'تفعيل'}</button></td></tr>`
-    })
-    html += '</tbody></table></div>'
-    el.innerHTML = html
-    el.querySelectorAll('[data-action="toggleCat"]').forEach((btn) => { btn.addEventListener('click', () => this.toggleCategory(btn.dataset.id)) })
   },
 
   renderItems(items) {
@@ -75,12 +60,13 @@ const SettingsPage = {
     if (items.length === 0) { el.innerHTML = '<div class="empty-state" style="padding:16px"><div class="empty-state-text">لا توجد أصناف بعد</div></div>'; return }
     let html = '<div class="data-table-wrapper"><table class="data-table"><thead><tr><th>الاسم</th><th>التصنيف</th><th>السعر</th><th>الحالة</th><th>الإجراءات</th></tr></thead><tbody>'
     items.forEach((item) => {
-      html += `<tr><td class="name-cell">${escapeHtml(item.name)}</td><td>${escapeHtml(item.categoryName)}</td><td class="number-cell">${formatCurrency(item.price)} ج.م</td><td><span class="status-badge ${item.active ? 'status-paid' : 'status-cancelled'}">${item.active ? 'نشط' : 'معطل'}</span></td><td><div class="table-actions"><button class="btn btn-sm btn-outline" data-action="editItem" data-id="${item.id}">تعديل</button><button class="btn btn-sm ${item.active ? 'btn-warning' : 'btn-success'}" data-action="toggleItem" data-id="${item.id}">${item.active ? 'تعطيل' : 'تفعيل'}</button></div></td></tr>`
+      html += `<tr><td class="name-cell">${escapeHtml(item.name)}</td><td>${escapeHtml(item.categoryName)}</td><td class="number-cell">${formatCurrency(item.price)} ج.م</td><td><span class="status-badge ${item.active ? 'status-paid' : 'status-cancelled'}">${item.active ? 'نشط' : 'معطل'}</span></td><td><div class="table-actions"><button class="btn btn-sm btn-outline" data-action="editItem" data-id="${item.id}">تعديل</button><button class="btn btn-sm ${item.active ? 'btn-warning' : 'btn-success'}" data-action="toggleItem" data-id="${item.id}">${item.active ? 'تعطيل' : 'تفعيل'}</button><button class="btn btn-sm btn-danger" data-action="deleteItem" data-id="${item.id}" data-name="${escapeHtml(item.name)}">🗑️</button></div></td></tr>`
     })
     html += '</tbody></table></div>'
     el.innerHTML = html
     el.querySelectorAll('[data-action="toggleItem"]').forEach((btn) => { btn.addEventListener('click', () => this.toggleItem(btn.dataset.id)) })
     el.querySelectorAll('[data-action="editItem"]').forEach((btn) => { btn.addEventListener('click', () => this.showEditItemModal(btn.dataset.id)) })
+    el.querySelectorAll('[data-action="deleteItem"]').forEach((btn) => { btn.addEventListener('click', () => this.deleteItem(btn.dataset.id, btn.dataset.name)) })
   },
 
   async saveSettings(event) {
@@ -91,16 +77,6 @@ const SettingsPage = {
       document.getElementById('labNameSidebar').textContent = s.labName || 'معمل الأسنان'
       Toast.success('تم حفظ الإعدادات بنجاح')
     } catch (error) { Toast.error('حدث خطأ أثناء الحفظ') }
-  },
-
-  async addCategory() {
-    const name = document.getElementById('newCategoryName').value.trim()
-    if (!name) { Toast.error('أدخل اسم التصنيف'); return }
-    try { await API.categories.create({ name }); document.getElementById('newCategoryName').value = ''; Toast.success('تم إضافة التصنيف'); this.renderCategories(await API.categories.getAll()) } catch (e) { Toast.error('حدث خطأ') }
-  },
-
-  async toggleCategory(id) {
-    try { await API.categories.deactivate(id); this.renderCategories(await API.categories.getAll()) } catch (e) { Toast.error('حدث خطأ') }
   },
 
   showAddItemModal() {
@@ -130,6 +106,7 @@ const SettingsPage = {
     const content = `
       <form id="editItemForm">
         <div class="form-group"><label class="form-label">اسم الصنف</label><input type="text" class="form-input" id="editItemName" value="${escapeHtml(item.name)}" required></div>
+        <div class="form-group"><label class="form-label">التصنيف</label><select class="form-select" id="editItemCategory"><option value="">اختر التصنيف</option></select></div>
         <div class="form-group"><label class="form-label">السعر</label><input type="number" class="form-input" id="editItemPrice" value="${item.price}" min="0" required></div>
         <div class="form-actions"><button type="submit" class="btn btn-primary">حفظ التعديلات</button><button type="button" class="btn btn-outline" id="modalCancelBtn">إلغاء</button></div>
       </form>
@@ -137,6 +114,10 @@ const SettingsPage = {
     Modal.show('تعديل الصنف', content)
     document.getElementById('editItemForm').addEventListener('submit', (e) => this.updateItem(e, id))
     document.getElementById('modalCancelBtn').addEventListener('click', () => Modal.close())
+    API.categories.getActive().then((cats) => {
+      const sel = document.getElementById('editItemCategory')
+      if (sel) cats.forEach((c) => { sel.innerHTML += `<option value="${c.id}" ${c.id === item.categoryId ? 'selected' : ''}>${escapeHtml(c.name)}</option>` })
+    })
   },
 
   async saveItem(event) {
@@ -146,11 +127,17 @@ const SettingsPage = {
 
   async updateItem(event, id) {
     event.preventDefault()
-    try { await API.items.update(id, { name: document.getElementById('editItemName').value.trim(), price: parseFloat(document.getElementById('editItemPrice').value) }); Modal.close(); Toast.success('تم تعديل الصنف بنجاح'); this.renderItems(await API.items.getAll()) } catch (e) { Toast.error('حدث خطأ') }
+    try { await API.items.update(id, { name: document.getElementById('editItemName').value.trim(), categoryId: document.getElementById('editItemCategory').value, price: parseFloat(document.getElementById('editItemPrice').value) }); Modal.close(); Toast.success('تم تعديل الصنف بنجاح'); this.renderItems(await API.items.getAll()) } catch (e) { Toast.error('حدث خطأ') }
   },
 
   async toggleItem(id) {
     try { await API.items.deactivate(id); this.renderItems(await API.items.getAll()) } catch (e) { Toast.error('حدث خطأ') }
+  },
+
+  async deleteItem(id, name) {
+    Modal.confirm(`هل أنت متأكد من حذف الصنف "${name}"؟`, async () => {
+      try { await API.items.delete(id); Toast.success('تم حذف الصنف بنجاح'); this.renderItems(await API.items.getAll()) } catch (e) { Toast.error('حدث خطأ في حذف الصنف') }
+    }, { confirmText: 'نعم، حذف', confirmClass: 'btn-danger' })
   },
 
   async createBackup() {
@@ -158,9 +145,30 @@ const SettingsPage = {
   },
 
   async restoreBackup() {
-    Modal.confirm('هل أنت متأكد من استعادة النسخة الاحتياطية؟ سيتم إعادة تشغيل التطبيق.', async () => {
-      try { const r = await API.backup.restore(); if (!r.canceled) Toast.success('تمت الاستعادة بنجاح') } catch (e) { Toast.error(e.message || 'حدث خطأ') }
+    Modal.confirm('هل أنت متأكد من استعادة النسخة الاحتياطية؟', async () => {
+      try { 
+        const r = await API.backup.restore(); 
+        if (!r.canceled) {
+          Toast.success('تم اخذ النسخة الاحتياطية بنجاح')
+          setTimeout(() => {
+            Toast.info('يرجى إعادة تشغيل البرنامج مرة أخرى لجلب البيانات')
+          }, 1500)
+        }
+      } catch (e) { Toast.error(e.message || 'حدث خطأ') }
     }, { confirmText: 'نعم، استعادة', confirmClass: 'btn-warning' })
+  },
+
+  showResetFinancialModal() {
+    Modal.confirm('⚠️ تنبيه هام: سيتم أخذ نسخة احتياطية تلقائياً قبل هذه العملية.\n\nسيتم حذف جميع التعاملات المالية (الطلبات، الفواتير، الدفعات، المصروفات، سجل التدقيق) نهائياً.\n\nملاحظة: بيانات المخزن ستُحفظ.\n\nهل أنت متأكد؟', async () => {
+      try {
+        const result = await API.reset.financialWithBackup()
+        if (result && !result.canceled) {
+          Toast.success('تم حفظ النسخة الاحتياطية وتصفير جميع التعاملات المالية بنجاح')
+        }
+      } catch (e) {
+        Toast.error(e.message || 'حدث خطأ أثناء العملية')
+      }
+    }, { title: 'تصفير جميع التعاملات المالية', confirmText: 'نعم، تصفير الكل', confirmClass: 'btn-danger' })
   }
 }
 

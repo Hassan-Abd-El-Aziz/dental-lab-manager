@@ -1,8 +1,9 @@
 import { getRealm } from '../realm.js'
-import Realm from 'realm'
+import { logAudit } from './auditService.js'
+import { getCurrentUser } from './authService.js'
 
 function generateId() {
-  return new Realm.BSON.ObjectId().toHexString()
+  return Date.now().toString(36) + Math.random().toString(36).substr(2, 9)
 }
 
 function generateDentistCode() {
@@ -82,6 +83,16 @@ export function deactivateDentist(id) {
   if (!dentist) throw new Error('Dentist not found')
   realm.write(() => { dentist.active = !dentist.active; dentist.updatedAt = new Date() })
   return getDentistById(id)
+}
+
+export function deleteDentist(id) {
+  const realm = getRealm()
+  const dentist = realm.objectForPrimaryKey('Dentist', id)
+  if (!dentist) throw new Error('الطبيب غير موجود')
+  const dentistName = dentist.name
+  realm.write(() => { realm.delete(dentist) })
+  logAudit(getCurrentUser()?.username || 'system', 'DELETE', 'Dentist', id, `حذف الطبيب "${dentistName}"`)
+  return true
 }
 
 export function getDentistAccount(dentistId, fromDate, toDate) {

@@ -201,6 +201,23 @@
   color: #b91c1c;
 }
 
+.order-items-table .btn-withdraw {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--info);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-right: 4px;
+  transition: all 0.2s;
+}
+
+.order-items-table .btn-withdraw:hover {
+  background: var(--info-bg);
+  border-color: var(--info);
+}
+
 .order-summary {
   display: flex;
   gap: 24px;

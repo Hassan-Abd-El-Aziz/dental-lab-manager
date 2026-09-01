@@ -2,11 +2,16 @@ import { Router } from './router.js'
 import { API } from './api.js'
 import { formatCurrency, formatCurrencyWithEGP, formatDate, formatDateTime, todayString, escapeHtml } from './utilities.js'
 import { Charts } from './charts.js'
+import { Auth } from './auth.js'
 
 const DashboardPage = {
   currentDate: todayString(),
 
   async render(container) {
+    if (!Auth.isAdmin()) {
+      this.renderEmployeeView(container)
+      return
+    }
     container.innerHTML = `
       <div class="page-header">
         <h1 class="page-title">🏠 لوحة التحكم</h1>
@@ -53,6 +58,73 @@ const DashboardPage = {
     })
 
     await this.loadData()
+  },
+
+  renderEmployeeView(container) {
+    if (this.clockInterval) {
+      clearInterval(this.clockInterval)
+      this.clockInterval = null
+    }
+    container.innerHTML = `
+      <div class="employee-dashboard">
+        <div class="clock-container">
+          <div class="clock">
+            <div class="clock-face">
+              <div class="hand hour-hand" id="hourHand"></div>
+              <div class="hand minute-hand" id="minuteHand"></div>
+              <div class="hand second-hand" id="secondHand"></div>
+              <div class="center-dot"></div>
+              <div class="clock-marks">
+                <span style="top:8px;left:50%;transform:translateX(-50%)">12</span>
+                <span style="top:50%;right:8px;transform:translateY(-50%)">3</span>
+                <span style="bottom:8px;left:50%;transform:translateX(-50%)">6</span>
+                <span style="top:50%;left:8px;transform:translateY(-50%)">9</span>
+              </div>
+            </div>
+          </div>
+          <div class="digital-time" id="digitalTime"></div>
+          <div class="current-date" id="currentDate"></div>
+        </div>
+      </div>
+    `
+    this.startClock()
+  },
+
+  startClock() {
+    const hourHand = document.getElementById('hourHand')
+    const minuteHand = document.getElementById('minuteHand')
+    const secondHand = document.getElementById('secondHand')
+    const digitalTime = document.getElementById('digitalTime')
+    const currentDate = document.getElementById('currentDate')
+
+    const updateClock = () => {
+      const now = new Date()
+      const hours = now.getHours()
+      const minutes = now.getMinutes()
+      const seconds = now.getSeconds()
+
+      if (hourHand) {
+        const hourDeg = (hours % 12) * 30 + minutes * 0.5
+        hourHand.style.transform = `rotate(${hourDeg}deg)`
+      }
+      if (minuteHand) {
+        const minuteDeg = minutes * 6 + seconds * 0.1
+        minuteHand.style.transform = `rotate(${minuteDeg}deg)`
+      }
+      if (secondHand) {
+        const secondDeg = seconds * 6
+        secondHand.style.transform = `rotate(${secondDeg}deg)`
+      }
+      if (digitalTime) {
+        digitalTime.textContent = now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      }
+      if (currentDate) {
+        currentDate.textContent = now.toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+      }
+    }
+
+    updateClock()
+    this.clockInterval = setInterval(updateClock, 1000)
   },
 
   async loadData() {

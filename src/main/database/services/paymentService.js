@@ -1,5 +1,7 @@
 import { getRealm } from '../realm.js'
 import { generateId } from './dentistService.js'
+import { logAudit } from './auditService.js'
+import { getCurrentUser } from './authService.js'
 
 function generatePaymentNumber() {
   const realm = getRealm()
@@ -26,6 +28,7 @@ export function createPayment(data) {
       }
     }
   })
+  logAudit(getCurrentUser()?.username || 'system', 'PAYMENT_CREATE', 'Payment', paymentId, `إنشاء دفعة ${paymentNumber} بمبلغ ${data.amount} ج.م`)
   return { paymentId, paymentNumber }
 }
 
@@ -42,4 +45,14 @@ export function getAllPayments(filters = {}) {
     const dentist = realm.objectForPrimaryKey('Dentist', pay.dentistId)
     return { id: pay.id, paymentNumber: pay.paymentNumber, dentistId: pay.dentistId, dentistName: dentist ? dentist.name : '', invoiceId: pay.invoiceId || '', orderId: pay.orderId || '', amount: pay.amount, date: pay.date, notes: pay.notes || '' }
   })
+}
+
+export function deletePayment(id) {
+  const realm = getRealm()
+  const payment = realm.objectForPrimaryKey('Payment', id)
+  if (!payment) throw new Error('الدفعة غير موجودة')
+  const paymentNumber = payment.paymentNumber
+  realm.write(() => { realm.delete(payment) })
+  logAudit(getCurrentUser()?.username || 'system', 'DELETE', 'Payment', id, `حذف الدفعة "${paymentNumber}"`)
+  return true
 }

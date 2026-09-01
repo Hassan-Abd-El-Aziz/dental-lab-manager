@@ -2,7 +2,8 @@ import { Router } from './router.js'
 import { API } from './api.js'
 import { Modal } from './components/modal.js'
 import { Toast } from './components/toast.js'
-import { formatCurrency, todayString, toDateString, escapeHtml } from './utilities.js'
+import { formatCurrency, formatDate, todayString, toDateString, escapeHtml } from './utilities.js'
+import { Auth } from './auth.js'
 
 const PaymentsPage = {
   async render(container) {
@@ -34,8 +35,15 @@ const PaymentsPage = {
     const to = document.getElementById('payToDate')?.value
     const filters = {}
     if (from && to) { filters.fromDate = from; filters.toDate = to }
-    const payments = await API.payments.getAll(filters)
-    this.renderTable(payments)
+    try {
+      const payments = await API.payments.getAll(filters)
+      this.renderTable(payments)
+    } catch (error) {
+      console.error('Error loading payments:', error)
+      Toast.error(error.message || 'حدث خطأ في تحميل المدفوعات')
+      const el = document.getElementById('paymentsTable')
+      if (el) el.innerHTML = ''
+    }
   },
 
   renderTable(payments) {
@@ -43,11 +51,17 @@ const PaymentsPage = {
     if (!el) return
     if (payments.length === 0) { el.innerHTML = '<div class="data-table-wrapper"><div class="table-empty"><div class="empty-state"><div class="empty-state-icon">💰</div><div class="empty-state-text">لا توجد مدفوعات</div></div></div></div>'; return }
     let totalAll = 0
-    let html = '<div class="data-table-wrapper"><table class="data-table"><thead><tr><th>رقم الدفعة</th><th>التاريخ</th><th>الطبيب</th><th>المبلغ</th><th>ملاحظات</th></tr></thead><tbody>'
-    payments.forEach((p) => { totalAll += p.amount; html += `<tr><td class="code-cell">${p.paymentNumber}</td><td class="date-cell">${formatDate(p.date)}</td><td class="name-cell">${escapeHtml(p.dentistName)}</td><td class="number-cell amount-positive">${formatCurrency(p.amount)} ج.م</td><td>${escapeHtml(p.notes)}</td></tr>` })
+    let html = '<div class="data-table-wrapper"><table class="data-table"><thead><tr><th>رقم الدفعة</th><th>التاريخ</th><th>الطبيب</th><th>المبلغ</th><th>ملاحظات</th><th>الإجراءات</th></tr></thead><tbody>'
+    payments.forEach((p) => { totalAll += p.amount; html += `<tr><td class="code-cell">${p.paymentNumber}</td><td class="date-cell">${formatDate(p.date)}</td><td class="name-cell">${escapeHtml(p.dentistName)}</td><td class="number-cell amount-positive">${formatCurrency(p.amount)} ج.م</td><td>${escapeHtml(p.notes)}</td><td><div class="table-actions">${Auth.isAdmin() ? `<button class="btn btn-sm btn-danger" data-action="delete" data-id="${p.id}">🗑️</button>` : ''}</div></td></tr>` })
     html += '</tbody></table></div>'
     html += `<div class="table-footer"><span>الإجمالي: ${formatCurrency(totalAll)} ج.م</span></div>`
     el.innerHTML = html
+
+    el.querySelectorAll('[data-action]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        if (btn.dataset.action === 'delete') await this.deletePayment(btn.dataset.id)
+      })
+    })
   },
 
   async showAddModal() {
@@ -89,7 +103,22 @@ const PaymentsPage = {
       Modal.close()
       Toast.success(`تم حفظ الدفعة ${result.paymentNumber}`)
       await this.loadData()
-    } catch (error) { Toast.error('حدث خطأ أثناء حفظ الدفعة') }
+    } catch (error) {
+      console.error('Error saving payment:', error)
+      Toast.error(error.message || 'حدث خطأ أثناء حفظ الدفعة')
+    }
+  },
+
+  async deletePayment(id) {
+    Modal.confirm('هل أنت متأكد من حذف هذه الدفعة؟\n\nسيتم حذف الدفعة نهائياً.', async () => {
+      try {
+        await API.payments.delete(id)
+        Toast.success('تم حذف الدفعة بنجاح')
+        await this.loadData()
+      } catch (error) {
+        Toast.error(error.message || 'حدث خطأ في حذف الدفعة')
+      }
+    }, { title: 'تأكيد الحذف', confirmText: 'نعم، حذف', confirmClass: 'btn-danger' })
   }
 }
 

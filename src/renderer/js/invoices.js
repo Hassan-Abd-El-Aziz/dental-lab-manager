@@ -4,14 +4,18 @@ import { Modal } from './components/modal.js'
 import { Toast } from './components/toast.js'
 import { formatCurrency, formatCurrencyWithEGP, formatDate, todayString, toDateString, escapeHtml, debounce, getStatusLabel, getStatusClass } from './utilities.js'
 import { Printing } from './printing.js'
+import { Auth } from './auth.js'
 
 const InvoicesPage = {
+  allInvoices: [],
+  searchQuery: '',
+
   async render(container) {
     const now = new Date()
     container.innerHTML = `
       <div class="page-header"><h1 class="page-title">🧾 الفواتير</h1></div>
       <div class="filter-bar">
-        <input type="text" class="form-input" id="invoiceSearch" placeholder="بحث برقم الفاتورة..." style="width:250px">
+        <input type="text" class="form-input" id="invoiceSearch" placeholder="بحث برقم الفاتورة أو اسم الطبيب..." style="width:300px" value="${escapeHtml(this.searchQuery)}">
         <select class="form-select" id="invoiceStatusFilter" style="width:180px"><option value="">كل الحالات</option><option value="PAID">مدفوعة</option><option value="PARTIAL">مدفوعة جزئيًا</option><option value="UNPAID">غير مدفوعة</option></select>
         <input type="date" class="form-input" id="invoiceFromDate" value="${toDateString(new Date(now.getFullYear(), now.getMonth(), 1))}" style="width:160px">
         <span style="color:var(--text-secondary)">إلى</span>
@@ -19,7 +23,10 @@ const InvoicesPage = {
       </div>
       <div id="invoicesTable"></div>
     `
-    document.getElementById('invoiceSearch').addEventListener('input', debounce((e) => this.onSearch(e.target.value), 300))
+    document.getElementById('invoiceSearch').addEventListener('input', (e) => {
+      this.searchQuery = e.target.value
+      this.filterAndRender()
+    })
     document.getElementById('invoiceStatusFilter').addEventListener('change', () => this.loadData())
     document.getElementById('invoiceFromDate').addEventListener('change', () => this.loadData())
     document.getElementById('invoiceToDate').addEventListener('change', () => this.loadData())
@@ -33,8 +40,15 @@ const InvoicesPage = {
     const to = document.getElementById('invoiceToDate')?.value
     if (status) filters.status = status
     if (from && to) { filters.fromDate = from; filters.toDate = to }
-    const invoices = await API.invoices.getAll(filters)
-    this.renderTable(invoices)
+    this.allInvoices = await API.invoices.getAll(filters)
+    this.filterAndRender()
+  },
+
+  filterAndRender() {
+    const query = this.searchQuery.trim().toLowerCase()
+    if (!query) { this.renderTable(this.allInvoices); return }
+    const filtered = this.allInvoices.filter(inv => inv.invoiceNumber.toLowerCase().includes(query) || inv.dentistName.toLowerCase().includes(query))
+    this.renderTable(filtered)
   },
 
   renderTable(invoices) {
@@ -57,6 +71,7 @@ const InvoicesPage = {
           <button class="btn btn-sm btn-primary" data-action="view" data-id="${inv.id}">عرض</button>
           <button class="btn btn-sm btn-outline" data-action="print" data-id="${inv.id}">طباعة</button>
           ${inv.status !== 'CANCELLED' && inv.status !== 'PAID' ? `<button class="btn btn-sm btn-warning" data-action="cancel" data-id="${inv.id}">إلغاء</button>` : ''}
+          ${Auth.isAdmin() ? `<button class="btn btn-sm btn-danger" data-action="delete" data-id="${inv.id}">🗑️</button>` : ''}
         </div></td>
       </tr>`
     })
@@ -68,6 +83,7 @@ const InvoicesPage = {
         if (btn.dataset.action === 'view') this.viewInvoice(btn.dataset.id)
         else if (btn.dataset.action === 'print') { const inv = await API.invoices.getById(btn.dataset.id); if (inv) Printing.printInvoice(inv) }
         else if (btn.dataset.action === 'cancel') this.cancelInvoice(btn.dataset.id)
+        else if (btn.dataset.action === 'delete') this.deleteInvoice(btn.dataset.id)
       })
     })
   },
@@ -79,8 +95,8 @@ const InvoicesPage = {
     if (!inv) return
     let itemsHtml = ''
     if (inv.items?.length) {
-      itemsHtml = '<table class="order-items-table"><thead><tr><th>الصنف</th><th>السعر</th><th>الكمية</th><th>الإجمالي</th></tr></thead><tbody>'
-      inv.items.forEach((i) => { itemsHtml += `<tr><td>${escapeHtml(i.itemNameSnapshot)}</td><td>${formatCurrency(i.unitPriceSnapshot)} ج.م</td><td>${i.quantity}</td><td>${formatCurrency(i.lineTotal)} ج.م</td></tr>` })
+      itemsHtml = '<table class="order-items-table"><thead><tr><th>الصنف</th><th>السعر</th><th>الكمية</th><th>الخصم</th><th>الإجمالي</th></tr></thead><tbody>'
+      inv.items.forEach((i) => { itemsHtml += `<tr><td>${escapeHtml(i.itemNameSnapshot)}</td><td>${formatCurrency(i.unitPriceSnapshot)} ج.م</td><td>${i.quantity}</td><td>${formatCurrency(i.discount || 0)} ج.م</td><td>${formatCurrency(Math.max(0, (i.lineTotal || 0) - (i.discount || 0)))} ج.م</td></tr>` })
       itemsHtml += '</tbody></table>'
     }
     const content = `
@@ -93,6 +109,7 @@ const InvoicesPage = {
       <div class="mt-2">${itemsHtml}</div>
       <div class="order-summary mt-2">
         <div class="summary-item"><div class="label">الإجمالي</div><div class="value">${formatCurrencyWithEGP(inv.total)}</div></div>
+        <div class="summary-item"><div class="label">الخصم</div><div class="value" style="color:var(--success)">${formatCurrencyWithEGP(inv.totalDiscount || 0)}</div></div>
         <div class="summary-item"><div class="label">المدفوع</div><div class="value" style="color:var(--success)">${formatCurrencyWithEGP(inv.paid)}</div></div>
         <div class="summary-item"><div class="label">المتبقي</div><div class="value danger">${formatCurrencyWithEGP(inv.remaining)}</div></div>
       </div>
@@ -105,6 +122,20 @@ const InvoicesPage = {
     Modal.confirm('هل أنت متأكد من إلغاء هذه الفاتورة؟', async () => {
       try { await API.invoices.cancel(id); Toast.success('تم إلغاء الفاتورة'); await this.loadData() } catch (e) { Toast.error('حدث خطأ') }
     })
+  },
+
+  async deleteInvoice(id) {
+    const inv = this.allInvoices.find(i => i.id === id)
+    if (!inv) return
+    Modal.confirm(`هل أنت متأكد من حذف الفاتورة "${inv.invoiceNumber}"؟\n\nسيتم حذف الفاتورة نهائياً.`, async () => {
+      try {
+        await API.invoices.delete(id)
+        Toast.success('تم حذف الفاتورة بنجاح')
+        await this.loadData()
+      } catch (error) {
+        Toast.error(error.message || 'حدث خطأ في حذف الفاتورة')
+      }
+    }, { title: 'تأكيد الحذف', confirmText: 'نعم، حذف', confirmClass: 'btn-danger' })
   }
 }
 
