@@ -15,5 +15,6 @@ export const API = {
   inventory: window.electronAPI.inventory,
   backup: window.electronAPI.backup,
   reset: window.electronAPI.reset,
-  app: window.electronAPI.app
+  app: window.electronAPI.app,
+  license: window.electronAPI.license
 }

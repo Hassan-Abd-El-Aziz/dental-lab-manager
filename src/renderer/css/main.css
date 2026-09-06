@@ -733,3 +733,75 @@ body {
   font-size: 14px;
   color: #e0f2fe;
 }
+
+.activation-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 200px);
+  padding: 40px 20px;
+}
+
+#app.login-mode .activation-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+}
+
+.activation-card {
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  padding: 40px;
+  box-shadow: var(--shadow-lg);
+  max-width: 480px;
+  width: 100%;
+  text-align: center;
+}
+
+.activation-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
+
+.activation-title {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--primary-dark);
+  margin-bottom: 8px;
+}
+
+.activation-subtitle {
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin-bottom: 28px;
+}
+
+.activation-input {
+  text-align: center;
+  font-size: 18px;
+  letter-spacing: 4px;
+  font-weight: 700;
+}
+
+.activation-btn {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  margin-top: 16px;
+}
+
+.activation-footer {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.activation-footer p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.activation-support {
+  font-size: 12px;
+  color: var(--text-light);
+}

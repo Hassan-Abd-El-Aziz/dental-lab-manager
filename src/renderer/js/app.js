@@ -17,9 +17,22 @@ import './login.js'
 import './users.js'
 import './auditLog.js'
 import './inventory.js'
+import './activation.js'
 
 document.addEventListener('DOMContentLoaded', async () => {
   try {
+    const activated = await API.license.check()
+    if (!activated) {
+      const appEl = document.getElementById('app')
+      const topNavbar = document.getElementById('topNavbar')
+      appEl.classList.add('login-mode')
+      if (topNavbar) topNavbar.style.display = 'none'
+      const logoutBtn = document.getElementById('logoutBtn')
+      if (logoutBtn) logoutBtn.style.display = 'none'
+      Router.navigate('activation')
+      return
+    }
+
     Router.init((page) => Auth.canAccess(page))
     Charts.init()
 

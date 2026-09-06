@@ -26,8 +26,7 @@ const LoginPage = {
             <button type="submit" class="btn btn-lg btn-primary w-full" style="margin-top:16px">تسجيل الدخول</button>
           </form>
           <div class="login-footer" style="margin-top:20px;text-align:center;font-size:12px;color:var(--text-secondary)">
-            مدير المستخدم الافتراضي: admin / admin123
-          </div>
+            تواصل معنا : 01009039628          </div>
         </div>
       </div>
     `

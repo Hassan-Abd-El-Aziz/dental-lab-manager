@@ -33,11 +33,9 @@ export function login(username, password) {
 }
 
 export function initSession() {
-  const session = loadSession()
-  if (session?.user) {
-    currentUser = session.user
-    setAuditUser(currentUser.username)
-  }
+  clearSession()
+  currentUser = null
+  setAuditUser(null)
   return currentUser
 }
 

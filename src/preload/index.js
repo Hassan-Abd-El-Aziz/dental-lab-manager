@@ -101,5 +101,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   app: {
     restart: () => ipcRenderer.invoke('app:restart')
+  },
+  license: {
+    check: () => ipcRenderer.invoke('license:check'),
+    activate: (code) => ipcRenderer.invoke('license:activate', code),
+    getHardwareId: () => ipcRenderer.invoke('license:getHardwareId')
   }
 })

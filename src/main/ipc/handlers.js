@@ -13,6 +13,7 @@ import * as authService from '../database/services/authService.js'
 import * as userService from '../database/services/userService.js'
 import * as auditService from '../database/services/auditService.js'
 import * as inventoryService from '../database/services/inventoryService.js'
+import * as licenseService from '../services/licenseService.js'
 
 export function registerIpcHandlers() {
   ipcMain.handle('dentists:getAll', () => dentistService.getAllDentists())
@@ -94,4 +95,8 @@ export function registerIpcHandlers() {
   ipcMain.handle('inventory:withdraw', (_, itemId, quantity, orderId, notes) => inventoryService.withdraw(itemId, quantity, orderId, notes))
   ipcMain.handle('inventory:transactions', (_, filters) => inventoryService.getTransactions(filters))
   ipcMain.handle('inventory:reset', (_, itemId) => inventoryService.resetItem(itemId))
+
+  ipcMain.handle('license:check', () => licenseService.isActivated())
+  ipcMain.handle('license:activate', (_, code) => licenseService.activateSoftware(code))
+  ipcMain.handle('license:getHardwareId', () => licenseService.getHardwareId())
 }
