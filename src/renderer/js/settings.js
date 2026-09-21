@@ -8,7 +8,6 @@ import { Auth } from './auth.js'
 const SettingsPage = {
   async render(container) {
     const settings = await API.settings.get()
-    const categories = await API.categories.getAll()
     const items = await API.items.getAll()
 
     container.innerHTML = `
@@ -58,9 +57,9 @@ const SettingsPage = {
     const el = document.getElementById('itemsList')
     if (!el) return
     if (items.length === 0) { el.innerHTML = '<div class="empty-state" style="padding:16px"><div class="empty-state-text">لا توجد أصناف بعد</div></div>'; return }
-    let html = '<div class="data-table-wrapper"><table class="data-table"><thead><tr><th>الاسم</th><th>التصنيف</th><th>السعر</th><th>الحالة</th><th>الإجراءات</th></tr></thead><tbody>'
+    let html = '<div class="data-table-wrapper"><table class="data-table"><thead><tr><th>الاسم</th><th>السعر</th><th>الحالة</th><th>الإجراءات</th></tr></thead><tbody>'
     items.forEach((item) => {
-      html += `<tr><td class="name-cell">${escapeHtml(item.name)}</td><td>${escapeHtml(item.categoryName)}</td><td class="number-cell">${formatCurrency(item.price)} ج.م</td><td><span class="status-badge ${item.active ? 'status-paid' : 'status-cancelled'}">${item.active ? 'نشط' : 'معطل'}</span></td><td><div class="table-actions"><button class="btn btn-sm btn-outline" data-action="editItem" data-id="${item.id}">تعديل</button><button class="btn btn-sm ${item.active ? 'btn-warning' : 'btn-success'}" data-action="toggleItem" data-id="${item.id}">${item.active ? 'تعطيل' : 'تفعيل'}</button><button class="btn btn-sm btn-danger" data-action="deleteItem" data-id="${item.id}" data-name="${escapeHtml(item.name)}">🗑️</button></div></td></tr>`
+      html += `<tr><td class="name-cell">${escapeHtml(item.name)}</td><td class="number-cell">${formatCurrency(item.price)} ج.م</td><td><span class="status-badge ${item.active ? 'status-paid' : 'status-cancelled'}">${item.active ? 'نشط' : 'معطل'}</span></td><td><div class="table-actions"><button class="btn btn-sm btn-outline" data-action="editItem" data-id="${item.id}">تعديل</button><button class="btn btn-sm ${item.active ? 'btn-warning' : 'btn-success'}" data-action="toggleItem" data-id="${item.id}">${item.active ? 'تعطيل' : 'تفعيل'}</button><button class="btn btn-sm btn-danger" data-action="deleteItem" data-id="${item.id}" data-name="${escapeHtml(item.name)}">🗑️</button></div></td></tr>`
     })
     html += '</tbody></table></div>'
     el.innerHTML = html
@@ -83,20 +82,13 @@ const SettingsPage = {
     const content = `
       <form id="addItemForm">
         <div class="form-group"><label class="form-label">اسم الصنف <span class="required">*</span></label><input type="text" class="form-input" id="itemName" required placeholder="اسم الصنف"></div>
-        <div class="form-row">
-          <div class="form-group"><label class="form-label">التصنيف <span class="required">*</span></label><select class="form-select" id="itemCategory" required><option value="">اختر التصنيف</option></select></div>
-          <div class="form-group"><label class="form-label">السعر <span class="required">*</span></label><input type="number" class="form-input" id="itemPrice" min="0" required placeholder="0"></div>
-        </div>
+        <div class="form-group"><label class="form-label">السعر <span class="required">*</span></label><input type="number" class="form-input" id="itemPrice" min="0" required placeholder="0"></div>
         <div class="form-actions"><button type="submit" class="btn btn-primary">حفظ</button><button type="button" class="btn btn-outline" id="modalCancelBtn">إلغاء</button></div>
       </form>
     `
     Modal.show('إضافة صنف جديد', content)
     document.getElementById('addItemForm').addEventListener('submit', (e) => this.saveItem(e))
     document.getElementById('modalCancelBtn').addEventListener('click', () => Modal.close())
-    API.categories.getActive().then((cats) => {
-      const sel = document.getElementById('itemCategory')
-      if (sel) cats.forEach((c) => { sel.innerHTML += `<option value="${c.id}">${c.name}</option>` })
-    })
   },
 
   async showEditItemModal(id) {
@@ -122,7 +114,7 @@ const SettingsPage = {
 
   async saveItem(event) {
     event.preventDefault()
-    try { await API.items.create({ name: document.getElementById('itemName').value.trim(), categoryId: document.getElementById('itemCategory').value, price: parseFloat(document.getElementById('itemPrice').value) }); Modal.close(); Toast.success('تم إضافة الصنف بنجاح'); this.renderItems(await API.items.getAll()) } catch (e) { Toast.error('حدث خطأ') }
+    try { await API.items.create({ name: document.getElementById('itemName').value.trim(), categoryId: '', price: parseFloat(document.getElementById('itemPrice').value) }); Modal.close(); Toast.success('تم إضافة الصنف بنجاح'); this.renderItems(await API.items.getAll()) } catch (e) { Toast.error('حدث خطأ') }
   },
 
   async updateItem(event, id) {
