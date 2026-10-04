@@ -61,6 +61,7 @@ export function registerIpcHandlers() {
 
   ipcMain.handle('settings:get', () => settingsService.getSettings())
   ipcMain.handle('settings:update', (_, data) => settingsService.updateSettings(data))
+  ipcMain.handle('settings:getLogo', () => settingsService.getLogoDataUrl())
 
   ipcMain.handle('dashboard:getStats', (_, date) => dashboardService.getDailyStats(date))
   ipcMain.handle('dashboard:getMonthlyChart', (_, year, month) => dashboardService.getMonthlyChartData(year, month))
@@ -99,4 +100,5 @@ export function registerIpcHandlers() {
   ipcMain.handle('license:check', () => licenseService.isActivated())
   ipcMain.handle('license:activate', (_, code) => licenseService.activateSoftware(code))
   ipcMain.handle('license:getHardwareId', () => licenseService.getHardwareId())
+  ipcMain.handle('license:getDeviceCode', () => licenseService.getDeviceCode())
 }

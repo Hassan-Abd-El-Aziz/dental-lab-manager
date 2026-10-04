@@ -54,7 +54,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   settings: {
     get: () => ipcRenderer.invoke('settings:get'),
-    update: (data) => ipcRenderer.invoke('settings:update', data)
+    update: (data) => ipcRenderer.invoke('settings:update', data),
+    getLogo: () => ipcRenderer.invoke('settings:getLogo')
   },
   dashboard: {
     getStats: (date) => ipcRenderer.invoke('dashboard:getStats', date),
@@ -105,6 +106,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   license: {
     check: () => ipcRenderer.invoke('license:check'),
     activate: (code) => ipcRenderer.invoke('license:activate', code),
-    getHardwareId: () => ipcRenderer.invoke('license:getHardwareId')
+    getHardwareId: () => ipcRenderer.invoke('license:getHardwareId'),
+    getDeviceCode: () => ipcRenderer.invoke('license:getDeviceCode')
   }
 })

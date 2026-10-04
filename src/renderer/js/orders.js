@@ -225,10 +225,12 @@ const OrdersPage = {
     const data = this.collectOrderData()
     if (!data) return
     try {
+      const dentist = await API.dentists.getById(data.dentistId)
+      const previousBalance = Math.max(0, dentist?.remaining || 0)
       const result = await API.orders.create(data)
       Toast.success(`تم حفظ الطلب ${result.orderNumber}`)
       const invoice = await API.invoices.getById(result.invoiceId)
-      if (invoice) Printing.printInvoice(invoice)
+      if (invoice) Printing.printInvoice(invoice, previousBalance)
       this.render(document.getElementById('page-container'))
     } catch (error) {
       console.error('Error saving and printing order:', error)
